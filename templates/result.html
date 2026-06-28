@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Recommendation</title>
+
+<link rel="stylesheet"
+href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Welcome {{ name }} 👋</h1>
+
+<h2>Your Information</h2>
+
+<p><strong>Age:</strong> {{ age }}</p>
+
+<p><strong>Weight:</strong> {{ weight }} kg</p>
+
+<p><strong>Height:</strong> {{ height }} cm</p>
+
+<p><strong>Goal:</strong> {{ goal }}</p>
+<h2>Your Health Analysis</h2>
+
+<p><strong>BMI:</strong> {{ bmi }}</p>
+
+<p><strong>Category:</strong> {{ bmi_category }}</p>
+<hr><br>
+<h2>🤖 AI Personalized Fitness Plan</h2>
+
+<pre>{{ ai_plan }}</pre>
+
+
+<br>
+
+
+<a href="/">
+<button>
+Go Back
+</button>
+</a>
+
+</div>
+
+</body>
+</html>

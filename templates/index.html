@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Fitness Coach</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<div class="container">
+
+    <h1>🏋️ AI Fitness Coach</h1>
+
+    <p class="subtitle">
+        Get your personalized workout and diet plan
+    </p>
+
+    <form action="/recommend" method="POST">
+
+        <label>Name</label>
+        <input
+            type="text"
+            name="name"
+            required>
+
+        <label>Age</label>
+        <input
+            type="number"
+            name="age"
+            required>
+
+        <label>Weight (kg)</label>
+        <input
+            type="number"
+            name="weight"
+            required>
+
+        <label>Height (cm)</label>
+        <input
+            type="number"
+            name="height"
+            required>
+
+        <label>Fitness Goal</label>
+
+        <select name="goal">
+
+            <option>Weight Loss</option>
+
+            <option>Muscle Gain</option>
+
+            <option>Maintenance</option>
+
+        </select>
+
+        <button type="submit">
+            Get My Fitness Plan
+        </button>
+
+    </form>
+
+</div>
+
+</body>
+</html>
