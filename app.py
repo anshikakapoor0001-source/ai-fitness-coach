@@ -1,30 +1,50 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 
 from services.bmi import calculate_bmi
 from services.ai_recommendation import generate_plan
-from database.database import save_user, get_all_users
+from database.database import save_user
 
 app = Flask(__name__)
 
 
+# ----------------------------
+# Login Page
+# ----------------------------
 @app.route("/")
 def home():
     return render_template("login.html")
 
 
+# ----------------------------
+# Signup Page
+# ----------------------------
+@app.route("/signup")
+def signup():
+    return render_template("signup.html")
+
+
+# ----------------------------
+# Profile Page
+# ----------------------------
+@app.route("/profile")
+def profile():
+    return render_template("profile.html")
+
+
+# ----------------------------
+# Generate AI Plan
+# ----------------------------
 @app.route("/recommend", methods=["POST"])
 def recommend():
 
     name = request.form["name"]
-    age = request.form["age"]
+    age = int(request.form["age"])
     weight = float(request.form["weight"])
     height = float(request.form["height"])
     goal = request.form["goal"]
 
-    # Calculate BMI
     bmi, bmi_category = calculate_bmi(weight, height)
 
-    # Generate AI recommendation
     ai_plan = generate_plan(
         name=name,
         age=age,
@@ -34,7 +54,6 @@ def recommend():
         goal=goal
     )
 
-    # Save user data to Supabase
     save_user(
         name=name,
         age=age,
@@ -57,36 +76,6 @@ def recommend():
         ai_plan=ai_plan
     )
 
-@app.route("/dashboard")
-def dashboard():
-
-    users = get_all_users()
-
-    total_users = len(users)
-
-    avg_bmi = 0
-
-    if total_users > 0:
-        avg_bmi = round(
-            sum(user["bmi"] for user in users) / total_users,
-            2
-        )
-
-    healthy = len(
-        [
-            user
-            for user in users
-            if user["bmi_category"] == "Healthy"
-        ]
-    )
-
-    return render_template(
-        "dashboard.html",
-        users=users,
-        total_users=total_users,
-        avg_bmi=avg_bmi,
-        healthy=healthy
-    )
 
 if __name__ == "__main__":
     app.run(debug=True)
