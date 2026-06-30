@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>AI Fitness Coach Dashboard</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+<div class="dashboard">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+
+        <div class="logo">
+            <h2>🤖 AURA AI</h2>
+            <p>Fitness Coach</p>
+        </div>
+
+        <ul class="menu">
+            <li class="active">🏠 Dashboard</li>
+            <li>🤖 AI Coach</li>
+            <li>📷 Form Analysis</li>
+            <li>📈 Progress</li>
+            <li>⚙ Settings</li>
+        </ul>
+
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+        <!-- Header -->
+        <div class="header">
+
+            <div>
+                <h2>Training Overview</h2>
+                <p>Welcome back, {{ name }} 👋</p>
+            </div>
+
+            <button class="camera-btn">
+                📷 Start Camera
+            </button>
+
+        </div>
+
+        <!-- Purple Banner -->
+        <div class="hero">
+
+            <h1>Train Smarter, Get Stronger</h1>
+
+            <p>
+                AI-powered workout recommendations and posture analysis.
+            </p>
+
+        </div>
+
+        <!-- Statistics -->
+        <div class="stats">
+
+            <div class="stat-card">
+                <h5>BMI</h5>
+                <h2>{{ bmi }}</h2>
+                <span>{{ bmi_category }}</span>
+            </div>
+
+            <div class="stat-card">
+                <h5>Goal</h5>
+                <h2>{{ goal }}</h2>
+            </div>
+
+            <div class="stat-card">
+                <h5>Weight</h5>
+                <h2>{{ weight }} kg</h2>
+            </div>
+
+            <div class="stat-card">
+                <h5>Height</h5>
+                <h2>{{ height }} cm</h2>
+            </div>
+
+        </div>
+
+        <!-- AI Recommendation -->
+        <div class="card-box">
+
+            <h3>🤖 AI Personalized Fitness Plan</h3>
+
+            <pre>{{ ai_plan }}</pre>
+
+        </div>
+
+    </main>
+
+</div>
+
+</body>
+</html>

@@ -2,14 +2,14 @@ from flask import Flask, render_template, request
 
 from services.bmi import calculate_bmi
 from services.ai_recommendation import generate_plan
-from database.database import save_user
+from database.database import save_user, get_all_users
 
 app = Flask(__name__)
 
 
 @app.route("/")
 def home():
-    return render_template("index.html")
+    return render_template("login.html")
 
 
 @app.route("/recommend", methods=["POST"])
@@ -46,7 +46,7 @@ def recommend():
     )
 
     return render_template(
-        "result.html",
+        "dashboard.html",
         name=name,
         age=age,
         weight=weight,
@@ -56,6 +56,7 @@ def recommend():
         bmi_category=bmi_category,
         ai_plan=ai_plan
     )
+
 @app.route("/dashboard")
 def dashboard():
 
