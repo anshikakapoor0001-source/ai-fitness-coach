@@ -1,4 +1,5 @@
 import os
+from urllib import response
 
 from dotenv import load_dotenv
 from google import genai
@@ -12,8 +13,8 @@ client = genai.Client(
 
 def generate_plan(name, age, height, weight, bmi, goal):
 
-    prompt = f"""
-You are an expert fitness coach and certified dietitian.
+   prompt = f"""
+You are an expert AI Fitness Coach.
 
 Generate a personalized fitness plan for the following user.
 
@@ -24,29 +25,57 @@ Weight: {weight} kg
 BMI: {bmi}
 Goal: {goal}
 
-Provide:
+Return the response EXACTLY in the following format.
 
-1. BMI Analysis
+## AI Recommendation
+(Write a short motivational recommendation in 5-6 lines.)
 
-2. Personalized Diet Plan
-- Breakfast
-- Lunch
-- Snacks
-- Dinner
+## Diet Plan
 
-3. Personalized Workout Plan
-- Warm-up
-- Main Workout
-- Cool Down
+Breakfast:
+...
 
-4. Health Tips
+Mid-Morning Snack:
+...
 
-Keep the response simple, beginner friendly and under 300 words.
+Lunch:
+...
+
+Evening Snack:
+...
+
+Dinner:
+...
+
+Water Intake:
+...
+
+## Workout Plan
+
+Monday:
+...
+
+Tuesday:
+...
+
+Wednesday:
+...
+
+Thursday:
+...
+
+Friday:
+...
+
+Saturday:
+...
+
+Sunday:
+Rest and Recovery
 """
-
-    response = client.models.generate_content(
+   response = client.models.generate_content(
         model="gemini-2.5-flash",
         contents=prompt
     )
 
-    return response.text
+   return response.text.strip()

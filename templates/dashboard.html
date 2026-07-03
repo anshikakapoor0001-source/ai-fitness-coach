@@ -26,16 +26,51 @@
     <aside class="sidebar">
 
         <div class="logo">
-            <h2>🤖 AURA AI</h2>
+            <h2>Fitness Coach</h2>
             <p>Fitness Coach</p>
         </div>
 
         <ul class="menu">
-            <li class="active">🏠 Dashboard</li>
-            <li>🤖 AI Coach</li>
-            <li>📷 Form Analysis</li>
-            <li>📈 Progress</li>
-            <li>⚙ Settings</li>
+
+            <li class="active">
+                <a href="#" class="text-decoration-none text-dark">
+                    🏠 Dashboard
+                </a>
+            </li>
+
+            <li>
+                <a href="{{ url_for(
+                    'ai_coach',
+                    name=name,
+                    bmi=bmi,
+                    bmi_category=bmi_category,
+                    goal=goal,
+                    weight=weight,
+                    height=height,
+                    ai_plan=ai_plan
+                ) }}" class="text-decoration-none text-dark">
+                    🤖 AI Coach
+                </a>
+            </li>
+
+            <li>
+                <a href="#" class="text-decoration-none text-dark">
+                    📷 Form Analysis
+                </a>
+            </li>
+
+            <li>
+                <a href="#" class="text-decoration-none text-dark">
+                    📈 Progress
+                </a>
+            </li>
+
+            <li>
+                <a href="#" class="text-decoration-none text-dark">
+                    ⚙ Settings
+                </a>
+            </li>
+
         </ul>
 
     </aside>
@@ -57,7 +92,7 @@
 
         </div>
 
-        <!-- Purple Banner -->
+        <!-- Hero Banner -->
         <div class="hero">
 
             <h1>Train Smarter, Get Stronger</h1>
@@ -94,12 +129,80 @@
 
         </div>
 
-        <!-- AI Recommendation -->
+        <!-- Quick Actions -->
         <div class="card-box">
 
-            <h3>🤖 AI Personalized Fitness Plan</h3>
+            <h3>🚀 Quick Actions</h3>
 
-            <pre>{{ ai_plan }}</pre>
+            <div class="row mt-4">
+
+                <div class="col-md-4 mb-3">
+
+                    <div class="action-card">
+
+                        <h4>🤖 AI Coach</h4>
+
+                        <p>
+                            View your personalized AI fitness recommendation,
+                            complete diet plan, and workout routine.
+                        </p>
+
+                        <a href="{{ url_for(
+                        'ai_coach',
+                        name=name,
+                        bmi=bmi,
+                        bmi_category=bmi_category,
+                        goal=goal,
+                        weight=weight,
+                        height=height,
+                        recommendation=recommendation,
+                        diet_plan=diet_plan,
+                        workout_plan=workout_plan
+                    ) }}">
+                        🤖 AI Coach
+                    </a>
+
+                    </div>
+
+                </div>
+
+                <div class="col-md-4 mb-3">
+
+                    <div class="action-card">
+
+                        <h4>📷 Form Analysis</h4>
+
+                        <p>
+                            Start the camera and let AI analyze your exercise posture.
+                        </p>
+
+                        <button class="btn btn-outline-primary">
+                            Start Camera
+                        </button>
+
+                    </div>
+
+                </div>
+
+                <div class="col-md-4 mb-3">
+
+                    <div class="action-card">
+
+                        <h4>📈 Progress</h4>
+
+                        <p>
+                            Track your BMI, weight, and fitness improvements over time.
+                        </p>
+
+                        <button class="btn btn-outline-primary">
+                            View Progress
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
 
         </div>
 
@@ -108,4 +211,5 @@
 </div>
 
 </body>
+
 </html>

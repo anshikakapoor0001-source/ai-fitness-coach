@@ -349,3 +349,24 @@ body{
     top:50%;
 
 }
+pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: inherit;
+    font-size: 15px;
+    line-height: 1.7;
+    color: #333;
+    margin: 0;
+}
+
+.card-box {
+    background: #fff;
+    border-radius: 18px;
+    padding: 25px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+
+.card-box h3 {
+    color: #6f42c1;
+    font-weight: 700;
+}
