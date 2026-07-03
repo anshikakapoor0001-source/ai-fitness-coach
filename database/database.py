@@ -1,9 +1,13 @@
 from database.supabase_client import supabase
 
 
-def save_user(name, age, weight, height, bmi, bmi_category, goal):
+# ----------------------------------------
+# Save or Update User Profile
+# ----------------------------------------
+def save_user(email, name, age, weight, height, bmi, bmi_category, goal):
 
     data = {
+        "email": email,
         "name": name,
         "age": int(age),
         "weight": float(weight),
@@ -13,11 +17,46 @@ def save_user(name, age, weight, height, bmi, bmi_category, goal):
         "goal": goal
     }
 
-    supabase.table("users").insert(data).execute()
+    response = (
+        supabase
+        .table("users")
+        .upsert(data, on_conflict="email")
+        .execute()
+    )
+
+    return response
 
 
+# ----------------------------------------
+# Get User By Email
+# ----------------------------------------
+def get_user_by_email(email):
+
+    response = (
+        supabase
+        .table("users")
+        .select("*")
+        .eq("email", email)
+        .execute()
+    )
+
+    if response.data:
+        return response.data[0]
+
+    return None
+
+
+# ----------------------------------------
+# Get All Users
+# ----------------------------------------
 def get_all_users():
 
-    response = supabase.table("users").select("*").order("id", desc=True).execute()
+    response = (
+        supabase
+        .table("users")
+        .select("*")
+        .order("id", desc=True)
+        .execute()
+    )
 
     return response.data
