@@ -1,14 +1,18 @@
 import email
 from unicodedata import name
 
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, session
 
 from services.bmi import calculate_bmi
 from services.ai_recommendation import generate_plan
 from database.database import save_user
 from services.auth import sign_up, sign_in
 from database.database import get_user_by_email
+from services.form_analysis import start_camera
 app = Flask(__name__)
+
+app.secret_key = "ai_fitness_secret_key"
+
 @app.route("/")
 def home():
     return render_template("login.html")
@@ -31,7 +35,7 @@ def login():
 
     if user:
 
-     ai_plan = generate_plan(
+        ai_plan = generate_plan(
         name=user["name"],
         age=user["age"],
         height=user["height"],
@@ -57,20 +61,21 @@ def login():
         diet_plan = ""
         workout_plan = ""
 
-    return render_template(
-        "dashboard.html",
-        name=user["name"],
-        age=user["age"],
-        weight=user["weight"],
-        height=user["height"],
-        goal=user["goal"],
-        bmi=user["bmi"],
-        bmi_category=user["bmi_category"],
-        recommendation=recommendation,
-        diet_plan=diet_plan,
-        workout_plan=workout_plan
-      )
-        
+    # Store data in session (ALWAYS runs)
+    session["recommendation"] = recommendation
+    session["diet_plan"] = diet_plan
+    session["workout_plan"] = workout_plan
+
+    session["name"] = user["name"]
+    session["bmi"] = user["bmi"]
+    session["bmi_category"] = user["bmi_category"]
+    session["goal"] = user["goal"]
+    session["weight"] = user["weight"]
+    session["height"] = user["height"]
+
+    print("Session:", dict(session))  # Debug
+
+    return redirect(url_for("dashboard"))  
 
     return redirect(url_for("profile", email=email))
 # ----------------------------
@@ -109,6 +114,25 @@ def profile():
         "profile.html",
         email=email
     )
+    
+    
+@app.route("/dashboard")
+def dashboard():
+
+    return render_template(
+        "dashboard.html",
+        name=session.get("name"),
+        bmi=session.get("bmi"),
+        bmi_category=session.get("bmi_category"),
+        goal=session.get("goal"),
+        weight=session.get("weight"),
+        height=session.get("height"),
+        recommendation=session.get("recommendation"),
+        diet_plan=session.get("diet_plan"),
+        workout_plan=session.get("workout_plan")
+    )
+    
+    
 # ----------------------------
 # Generate AI Plan
 # ----------------------------
@@ -151,6 +175,18 @@ def recommend():
 
     except Exception:
         recommendation = ai_plan
+        
+        
+        session["recommendation"] = recommendation
+    session["diet_plan"] = diet_plan
+    session["workout_plan"] = workout_plan
+
+    session["name"] = name
+    session["bmi"] = round(bmi, 2)
+    session["bmi_category"] = bmi_category
+    session["goal"] = goal
+    session["weight"] = weight
+    session["height"] = height
 
     # Save user profile to Supabase
     save_user(
@@ -168,37 +204,39 @@ def recommend():
     print("Diet:", diet_plan)
     print("Workout:", workout_plan)
     # Open dashboard
-    return render_template(
-        "dashboard.html",
-        email=email,
-        name=name,
-        age=age,
-        weight=weight,
-        height=height,
-        goal=goal,
-        bmi=round(bmi, 2),
-        bmi_category=bmi_category,
-        ai_plan=ai_plan,
-        recommendation=recommendation,
-        diet_plan=diet_plan,
-        workout_plan=workout_plan
-    )
+    return redirect(url_for("dashboard"))
 
 @app.route("/ai-coach")
 def ai_coach():
 
+    print("Recommendation:", session.get("recommendation"))
+    print("Diet:", session.get("diet_plan"))
+    print("Workout:", session.get("workout_plan"))
+
     return render_template(
         "ai_coach.html",
-        name=request.args.get("name"),
-        bmi=request.args.get("bmi"),
-        bmi_category=request.args.get("bmi_category"),
-        goal=request.args.get("goal"),
-        weight=request.args.get("weight"),
-        height=request.args.get("height"),
-       recommendation=request.args.get("recommendation"),
-        diet_plan=request.args.get("diet_plan"),
-        workout_plan=request.args.get("workout_plan")
+        name=session.get("name"),
+        bmi=session.get("bmi"),
+        bmi_category=session.get("bmi_category"),
+        goal=session.get("goal"),
+        weight=session.get("weight"),
+        height=session.get("height"),
+        recommendation=session.get("recommendation"),
+        diet_plan=session.get("diet_plan"),
+        workout_plan=session.get("workout_plan")
     )
+    
+    
+@app.route("/form-analysis")
+def form_analysis():
+    return render_template("form_analysis.html")
+
+@app.route("/start-camera")
+def start_camera_route():
+
+    start_camera()
+
+    return redirect(url_for("form_analysis"))
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -26,33 +26,37 @@
 
         <ul class="menu">
 
-            <li>
-                <a href="javascript:history.back()" class="text-decoration-none text-dark">
-                    🏠 Dashboard
-                </a>
-            </li>
+    <li>
+       <a href="{{ url_for('dashboard') }}" class="text-decoration-none text-dark">
+            🏠 Dashboard
+        </a>
+    </li>
 
-            <a href="{{ url_for(
-                'ai_coach',
-                name=name,
-                bmi=bmi,
-                bmi_category=bmi_category,
-                goal=goal,
-                weight=weight,
-                height=height,
-                recommendation=recommendation,
-                diet_plan=diet_plan,
-                workout_plan=workout_plan
-            ) }}">
-                🤖 AI Coach
-</a>
+    <li class="active">
+        <a href="{{ url_for('ai_coach') }}" class="text-decoration-none text-dark">
+            🤖 AI Coach
+        </a>
+    </li>
 
-            <li>📷 Form Analysis</li>
-            <li>📈 Progress</li>
-            <li>⚙ Settings</li>
+    <li>
+        <a href="{{ url_for('form_analysis') }}" class="text-decoration-none text-dark">
+            📷 Form Analysis
+        </a>
+    </li>
 
-        </ul>
+    <li>
+        <a href="#" class="text-decoration-none text-dark">
+            📈 Progress
+        </a>
+    </li>
 
+    <li>
+        <a href="#" class="text-decoration-none text-dark">
+            ⚙️ Settings
+        </a>
+    </li>
+
+</ul>
     </aside>
 
     <!-- Main -->

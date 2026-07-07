@@ -39,22 +39,13 @@
             </li>
 
             <li>
-                <a href="{{ url_for(
-                    'ai_coach',
-                    name=name,
-                    bmi=bmi,
-                    bmi_category=bmi_category,
-                    goal=goal,
-                    weight=weight,
-                    height=height,
-                    ai_plan=ai_plan
-                ) }}" class="text-decoration-none text-dark">
-                    🤖 AI Coach
-                </a>
+                <a href="{{ url_for('ai_coach') }}">
+                        🤖 AI Coach
+                    </a>
             </li>
 
             <li>
-                <a href="#" class="text-decoration-none text-dark">
+                <a href="{{ url_for('form_analysis') }}">
                     📷 Form Analysis
                 </a>
             </li>
@@ -147,20 +138,9 @@
                             complete diet plan, and workout routine.
                         </p>
 
-                        <a href="{{ url_for(
-                        'ai_coach',
-                        name=name,
-                        bmi=bmi,
-                        bmi_category=bmi_category,
-                        goal=goal,
-                        weight=weight,
-                        height=height,
-                        recommendation=recommendation,
-                        diet_plan=diet_plan,
-                        workout_plan=workout_plan
-                    ) }}">
-                        🤖 AI Coach
-                    </a>
+                        <a href="{{ url_for('ai_coach') }}" class="btn btn-primary">
+                                Open AI Coach
+                            </a>
 
                     </div>
 
