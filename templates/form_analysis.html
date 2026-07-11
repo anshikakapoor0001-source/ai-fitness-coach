@@ -96,10 +96,27 @@
                         Analyze squat posture and count repetitions.
                     </p>
 
-                    <a href="{{ url_for('start_camera_route') }}"
-                       class="btn btn-primary">
-                        Start Analysis
-                    </a>
+                   <button id="startBtn" class="btn btn-primary">
+                            Start Analysis
+                        </button>
+
+                        <button id="stopBtn"
+                                class="btn btn-danger"
+                                style="display:none;">
+                            Stop Workout
+                        </button>
+
+                        <div id="cameraContainer"
+                            class="mt-4"
+                            style="display:none;">
+
+                            <img
+                                id="videoFeed"
+                                src=""
+                                class="img-fluid rounded shadow"
+                            >
+
+                        </div>
 
                 </div>
 
@@ -147,5 +164,39 @@
 
 </div>
 
+
+<script>
+
+const startBtn = document.getElementById("startBtn");
+const stopBtn = document.getElementById("stopBtn");
+
+const camera = document.getElementById("cameraContainer");
+const video = document.getElementById("videoFeed");
+
+startBtn.onclick = function(){
+
+    camera.style.display = "block";
+
+    stopBtn.style.display = "inline-block";
+
+    startBtn.style.display = "none";
+
+    video.src = "/video_feed";
+
+}
+
+stopBtn.onclick = function(){
+
+    video.src = "";
+
+    camera.style.display = "none";
+
+    stopBtn.style.display = "none";
+
+    startBtn.style.display = "inline-block";
+
+}
+
+</script>
 </body>
 </html>

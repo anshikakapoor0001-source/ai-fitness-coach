@@ -1,14 +1,14 @@
 import email
 from unicodedata import name
 
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, Response
 
 from services.bmi import calculate_bmi
 from services.ai_recommendation import generate_plan
 from database.database import save_user
 from services.auth import sign_up, sign_in
 from database.database import get_user_by_email
-from services.form_analysis import start_camera
+from services.form_analysis import generate_frames
 app = Flask(__name__)
 
 app.secret_key = "ai_fitness_secret_key"
@@ -231,12 +231,12 @@ def ai_coach():
 def form_analysis():
     return render_template("form_analysis.html")
 
-@app.route("/start-camera")
-def start_camera_route():
-
-    start_camera()
-
-    return redirect(url_for("form_analysis"))
+@app.route("/video_feed")
+def video_feed():
+    return Response(
+        generate_frames(),
+        mimetype="multipart/x-mixed-replace; boundary=frame"
+    )
 
 if __name__ == "__main__":
     app.run(debug=True)
