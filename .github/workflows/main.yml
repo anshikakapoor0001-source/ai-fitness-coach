@@ -1,0 +1,15 @@
+name: keep alive
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ping app
+        run: |
+          curl --fail --silent --show-error https://ai-fitness-coach-jlre.onrender.com/
