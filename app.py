@@ -11,12 +11,14 @@ from services.auth import sign_in, sign_out, sign_up
 from services.bmi import calculate_bmi
 from services.diet import get_diet_plan
 from services.form_analysis import EXERCISES, exercise_choices
+from services.markdown_renderer import render_markdown
 from services.workout import get_workout_plan
 
 
 app = Flask(__name__)
 app.config.from_object(Config)
 app.logger.setLevel(logging.INFO)
+app.jinja_env.filters["markdown"] = render_markdown
 
 
 def login_required(view):
@@ -262,7 +264,12 @@ def recommend():
 def ai_coach():
     if not session.get("name"):
         return redirect(url_for("profile"))
-    return render_template("ai_coach.html")
+    return render_template(
+        "ai_coach.html",
+        recommendation_html=render_markdown(session.get("recommendation")),
+        diet_plan_html=render_markdown(session.get("diet_plan")),
+        workout_plan_html=render_markdown(session.get("workout_plan")),
+    )
 
 
 @app.route("/form-analysis")

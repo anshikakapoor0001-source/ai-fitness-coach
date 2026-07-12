@@ -20,6 +20,14 @@ You are an expert AI Fitness Coach. Provide general wellness guidance only.
 Do not diagnose medical conditions or make medical claims. Encourage the user to
 consult a qualified professional for injuries, chronic conditions, or concerns.
 
+Format the entire response as clean GitHub-flavored Markdown.
+- Do not wrap the response in a code block.
+- Do not escape Markdown characters.
+- Put a blank line after every heading.
+- Put a blank line before every bullet list.
+- Use real Markdown bullets with "- "; do not write dense label-only paragraphs.
+- Keep the exact top-level headings shown below so the app can split the plan.
+
 Create a personalized fitness plan for this user:
 Name: {name}
 Age: {age}
@@ -31,24 +39,66 @@ Goal: {goal}
 Return the response exactly with these Markdown headings:
 
 ## AI Recommendation
-Write a short, supportive recommendation in 4–6 lines.
+
+- Write 4 to 6 concise bullet points.
+- Make each bullet one practical sentence.
+- Use **bold** for the most important habit or warning.
 
 ## Diet Plan
-Breakfast:
-Mid-Morning Snack:
-Lunch:
-Evening Snack:
-Dinner:
-Water Intake:
+
+### Breakfast
+
+- Give 1 practical meal idea.
+
+### Mid-Morning Snack
+
+- Give 1 practical snack idea.
+
+### Lunch
+
+- Give 1 balanced meal idea.
+
+### Evening Snack
+
+- Give 1 light snack idea.
+
+### Dinner
+
+- Give 1 balanced dinner idea.
+
+### Water Intake
+
+- Give a realistic hydration target.
 
 ## Workout Plan
-Monday:
-Tuesday:
-Wednesday:
-Thursday:
-Friday:
-Saturday:
-Sunday: Rest and recovery
+
+### Monday
+
+- Give the workout for Monday.
+
+### Tuesday
+
+- Give the workout for Tuesday.
+
+### Wednesday
+
+- Give the workout for Wednesday.
+
+### Thursday
+
+- Give the workout for Thursday.
+
+### Friday
+
+- Give the workout for Friday.
+
+### Saturday
+
+- Give the workout for Saturday.
+
+### Sunday
+
+- Rest and recovery.
 """
     response = client.models.generate_content(
         model="gemini-2.5-flash",

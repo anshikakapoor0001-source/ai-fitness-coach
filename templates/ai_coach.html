@@ -6,10 +6,10 @@
     <main class="main-content">
         {% include "_alerts.html" %}
         <header class="page-header"><div><p class="eyebrow">YOUR PERSONAL PLAN</p><h1>AI Coach</h1><p class="muted">A balanced starting point for your {{ session.goal|lower }} goal.</p></div><a class="btn btn-outline-primary" href="{{ url_for('profile') }}"><i class="bi bi-pencil"></i> Update profile</a></header>
-        <section class="recommendation-card"><div class="plan-icon"><i class="bi bi-stars"></i></div><div><p class="eyebrow">COACH’S NOTE</p><h2>Start where you are</h2><p>{{ session.recommendation }}</p></div></section>
+        <section class="recommendation-card"><div class="plan-icon"><i class="bi bi-stars"></i></div><div><p class="eyebrow">COACH’S NOTE</p><h2>Start where you are</h2><div class="markdown-content">{{ recommendation_html }}</div></div></section>
         <div class="plan-grid">
-            <section class="content-card plan-card"><div class="plan-heading"><span class="plan-icon diet"><i class="bi bi-apple"></i></span><div><p class="eyebrow">NOURISH</p><h2>Diet plan</h2></div></div><div class="plan-text">{{ session.diet_plan }}</div></section>
-            <section class="content-card plan-card"><div class="plan-heading"><span class="plan-icon workout"><i class="bi bi-activity"></i></span><div><p class="eyebrow">MOVE</p><h2>Workout plan</h2></div></div><div class="plan-text">{{ session.workout_plan }}</div></section>
+            <section class="content-card plan-card"><div class="plan-heading"><span class="plan-icon diet"><i class="bi bi-apple"></i></span><div><p class="eyebrow">NOURISH</p><h2>Diet plan</h2></div></div><div class="plan-text markdown-content">{{ diet_plan_html }}</div></section>
+            <section class="content-card plan-card"><div class="plan-heading"><span class="plan-icon workout"><i class="bi bi-activity"></i></span><div><p class="eyebrow">MOVE</p><h2>Workout plan</h2></div></div><div class="plan-text markdown-content">{{ workout_plan_html }}</div></section>
         </div>
         <p class="disclaimer"><i class="bi bi-info-circle"></i> General wellness guidance only. Speak with a qualified professional before starting a new exercise or nutrition program.</p>
     </main>
