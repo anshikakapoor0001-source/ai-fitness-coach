@@ -7,36 +7,166 @@
         {% include "_alerts.html" %}
         <header class="page-header"><div><p class="eyebrow">LIVE FEEDBACK</p><h1>Form analysis</h1><p class="muted">Use your camera to check movement depth and count controlled reps.</p></div></header>
         <section class="hero form-hero"><div><span class="hero-badge"><i class="bi bi-camera-video"></i> Four exercises available</span><h2>Move with confidence.</h2><p>Select an exercise, then stand far enough back for the landmarks used by the coach to appear in frame.</p></div><i class="bi bi-person-arms-up hero-icon"></i></section>
-        <section class="content-card analysis-card"><div class="analysis-copy"><span class="exercise-icon"><i class="bi bi-activity"></i></span><div><h2 id="coachTitle">Squat coach</h2><p class="muted">The camera stays on this device and is used only for this live session.</p></div></div><div class="analysis-actions"><label class="visually-hidden" for="exerciseSelect">Exercise</label><select id="exerciseSelect" class="form-select" aria-label="Choose an exercise">{% for exercise in exercises %}<option value="{{ exercise.id }}">{{ exercise.name }}</option>{% endfor %}</select><button id="startBtn" class="btn btn-primary"><i class="bi bi-play-fill"></i> Start analysis</button><button id="stopBtn" class="btn btn-outline-danger d-none"><i class="bi bi-stop-fill"></i> Stop session</button></div><div id="cameraContainer" class="camera-container d-none"><img id="videoFeed" alt="Live exercise form analysis camera feed"><p id="cameraStatus" class="camera-status"><i class="bi bi-camera-video"></i> Connecting to camera...</p></div></section>
+        <section class="content-card analysis-card"><div class="analysis-copy"><span class="exercise-icon"><i class="bi bi-activity"></i></span><div><h2 id="coachTitle">Squat coach</h2><p class="muted">The camera stays in your browser and is never streamed to the Flask server.</p></div></div><div class="analysis-actions"><label class="visually-hidden" for="exerciseSelect">Exercise</label><select id="exerciseSelect" class="form-select" aria-label="Choose an exercise">{% for exercise in exercises %}<option value="{{ exercise.id }}">{{ exercise.name }}</option>{% endfor %}</select><button id="startBtn" class="btn btn-primary"><i class="bi bi-play-fill"></i> Start analysis</button><button id="stopBtn" class="btn btn-outline-danger d-none"><i class="bi bi-stop-fill"></i> Stop session</button></div><div id="cameraContainer" class="camera-container d-none"><video id="inputVideo" playsinline muted class="d-none"></video><canvas id="outputCanvas" aria-label="Live exercise form analysis camera feed"></canvas><div class="camera-overlay"><strong id="repCount">Reps: 0</strong><span id="feedbackText">Stand in view to begin</span></div><p id="cameraStatus" class="camera-status"><i class="bi bi-camera-video"></i> Connecting to camera...</p></div></section>
         <section class="tips-grid"><article><i class="bi bi-rulers"></i><h3>Frame yourself</h3><p>Keep the joints used by your exercise visible.</p></article><article><i class="bi bi-arrow-down-up"></i><h3>Controlled movement</h3><p>Complete each movement and return to the starting position.</p></article><article><i class="bi bi-shield-check"></i><h3>Listen to your body</h3><p>Stop if you feel pain or dizziness.</p></article></section>
     </main>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
 <script>
 const startBtn = document.getElementById('startBtn');
 const stopBtn = document.getElementById('stopBtn');
-const camera = document.getElementById('cameraContainer');
-const video = document.getElementById('videoFeed');
+const cameraContainer = document.getElementById('cameraContainer');
+const video = document.getElementById('inputVideo');
+const canvas = document.getElementById('outputCanvas');
+const canvasContext = canvas.getContext('2d');
 const status = document.getElementById('cameraStatus');
 const exerciseSelect = document.getElementById('exerciseSelect');
 const coachTitle = document.getElementById('coachTitle');
+const repCount = document.getElementById('repCount');
+const feedbackText = document.getElementById('feedbackText');
+const exercises = {{ exercise_config|tojson }};
+const landmarkIndexes = {
+  LEFT_SHOULDER: 11,
+  LEFT_ELBOW: 13,
+  LEFT_WRIST: 15,
+  LEFT_HIP: 23,
+  LEFT_KNEE: 25,
+  LEFT_ANKLE: 27,
+};
+
+let pose;
+let stream;
+let running = false;
+let counter = 0;
+let stage = null;
+let started = false;
+let downFrames = 0;
+
+function calculateAngle(a, b, c) {
+  const radians = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
+  let angle = Math.abs(radians * 180 / Math.PI);
+  return angle > 180 ? 360 - angle : angle;
+}
+
+function resetCounter() {
+  counter = 0;
+  stage = null;
+  started = false;
+  downFrames = 0;
+  repCount.textContent = 'Reps: 0';
+  feedbackText.textContent = 'Stand in view to begin';
+}
+
+function updateRepState(landmarks) {
+  const exercise = exercises[exerciseSelect.value] || exercises.squat;
+  const [firstName, middleName, lastName] = exercise.landmarks;
+  const first = landmarks[landmarkIndexes[firstName]];
+  const middle = landmarks[landmarkIndexes[middleName]];
+  const last = landmarks[landmarkIndexes[lastName]];
+
+  if (!first || !middle || !last || first.visibility < 0.5 || middle.visibility < 0.5 || last.visibility < 0.5) {
+    feedbackText.textContent = 'Move fully into the camera frame';
+    return;
+  }
+
+  const angle = calculateAngle(first, middle, last);
+  if (!started && angle > exercise.up_angle) {
+    started = true;
+    stage = 'UP';
+    feedbackText.textContent = exercise.ready;
+  } else if (started && angle > exercise.up_angle) {
+    if (stage === 'DOWN') {
+      counter += 1;
+      repCount.textContent = `Reps: ${counter}`;
+      feedbackText.textContent = `Rep ${counter} complete!`;
+    } else {
+      feedbackText.textContent = exercise.up_feedback;
+    }
+    stage = 'UP';
+    downFrames = 0;
+  } else if (started && angle < exercise.down_angle) {
+    downFrames += 1;
+    if (downFrames >= 5) {
+      stage = 'DOWN';
+      feedbackText.textContent = exercise.down_feedback;
+    }
+  } else if (started) {
+    feedbackText.textContent = exercise.middle_feedback;
+  }
+}
+
+function onResults(results) {
+  canvas.width = video.videoWidth || 1280;
+  canvas.height = video.videoHeight || 720;
+  canvasContext.save();
+  canvasContext.clearRect(0, 0, canvas.width, canvas.height);
+  canvasContext.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+
+  if (results.poseLandmarks) {
+    drawConnectors(canvasContext, results.poseLandmarks, POSE_CONNECTIONS, { color: '#5b3df5', lineWidth: 4 });
+    drawLandmarks(canvasContext, results.poseLandmarks, { color: '#00d084', lineWidth: 2 });
+    updateRepState(results.poseLandmarks);
+  }
+  canvasContext.restore();
+  status.classList.add('d-none');
+}
+
+async function processFrame() {
+  if (!running || !pose) {
+    return;
+  }
+  await pose.send({ image: video });
+  requestAnimationFrame(processFrame);
+}
 
 exerciseSelect.addEventListener('change', () => {
   coachTitle.textContent = `${exerciseSelect.options[exerciseSelect.selectedIndex].text} coach`;
+  resetCounter();
 });
-startBtn.addEventListener('click', () => {
-  camera.classList.remove('d-none');
+
+startBtn.addEventListener('click', async () => {
+  cameraContainer.classList.remove('d-none');
   startBtn.classList.add('d-none');
   stopBtn.classList.remove('d-none');
   exerciseSelect.disabled = true;
   status.classList.remove('d-none');
   status.innerHTML = '<i class="bi bi-camera-video"></i> Connecting to camera...';
-  video.src = `{{ url_for("video_feed") }}?exercise=${encodeURIComponent(exerciseSelect.value)}`;
-  video.onload = () => { status.classList.add('d-none'); };
-  video.onerror = () => { status.innerHTML = '<i class="bi bi-exclamation-triangle"></i> We could not access the camera. Check that it is connected and not in use by another app.'; };
+  resetCounter();
+
+  try {
+    pose = new Pose({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}` });
+    pose.setOptions({ modelComplexity: 1, smoothLandmarks: true, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
+    pose.onResults(onResults);
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+      audio: false,
+    });
+    video.srcObject = stream;
+    await video.play();
+    running = true;
+    processFrame();
+  } catch (error) {
+    status.classList.remove('d-none');
+    status.innerHTML = '<i class="bi bi-exclamation-triangle"></i> We could not access the camera. Use localhost/HTTPS and allow camera permission.';
+    startBtn.classList.remove('d-none');
+    stopBtn.classList.add('d-none');
+    exerciseSelect.disabled = false;
+  }
 });
-stopBtn.addEventListener('click', () => {
-  video.src = '';
-  camera.classList.add('d-none');
+
+stopBtn.addEventListener('click', async () => {
+  running = false;
+  if (pose) {
+    pose.close();
+    pose = null;
+  }
+  if (stream) {
+    stream.getTracks().forEach((track) => track.stop());
+    stream = null;
+    video.srcObject = null;
+  }
+  cameraContainer.classList.add('d-none');
   startBtn.classList.remove('d-none');
   stopBtn.classList.add('d-none');
   exerciseSelect.disabled = false;
