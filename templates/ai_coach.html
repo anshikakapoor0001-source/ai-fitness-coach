@@ -1,125 +1,18 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Coach</title>
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-
-<body>
-
+{% extends "base.html" %}
+{% block title %}AI Coach | Fitness AI{% endblock %}
+{% block body %}
 <div class="dashboard">
-
-    <!-- Sidebar -->
-    <aside class="sidebar">
-
-        <div class="logo">
-            <h2>🤖 AURA AI</h2>
-            <p>Fitness Coach</p>
-        </div>
-
-        <ul class="menu">
-
-    <li>
-       <a href="{{ url_for('dashboard') }}" class="text-decoration-none text-dark">
-            🏠 Dashboard
-        </a>
-    </li>
-
-    <li class="active">
-        <a href="{{ url_for('ai_coach') }}" class="text-decoration-none text-dark">
-            🤖 AI Coach
-        </a>
-    </li>
-
-    <li>
-        <a href="{{ url_for('form_analysis') }}" class="text-decoration-none text-dark">
-            📷 Form Analysis
-        </a>
-    </li>
-
-    <li>
-        <a href="#" class="text-decoration-none text-dark">
-            📈 Progress
-        </a>
-    </li>
-
-    <li>
-        <a href="#" class="text-decoration-none text-dark">
-            ⚙️ Settings
-        </a>
-    </li>
-
-</ul>
-    </aside>
-
-    <!-- Main -->
+    {% include "_sidebar.html" %}
     <main class="main-content">
-
-        <div class="header">
-
-            <div>
-                <h2>🤖 AI Coach</h2>
-                <p>Hello {{ name }}, here's your personalized fitness plan.</p>
-            </div>
-
+        {% include "_alerts.html" %}
+        <header class="page-header"><div><p class="eyebrow">YOUR PERSONAL PLAN</p><h1>AI Coach</h1><p class="muted">A balanced starting point for your {{ session.goal|lower }} goal.</p></div><a class="btn btn-outline-primary" href="{{ url_for('profile') }}"><i class="bi bi-pencil"></i> Update profile</a></header>
+        <section class="recommendation-card"><div class="plan-icon"><i class="bi bi-stars"></i></div><div><p class="eyebrow">COACH’S NOTE</p><h2>Start where you are</h2><p>{{ session.recommendation }}</p></div></section>
+        <div class="plan-grid">
+            <section class="content-card plan-card"><div class="plan-heading"><span class="plan-icon diet"><i class="bi bi-apple"></i></span><div><p class="eyebrow">NOURISH</p><h2>Diet plan</h2></div></div><div class="plan-text">{{ session.diet_plan }}</div></section>
+            <section class="content-card plan-card"><div class="plan-heading"><span class="plan-icon workout"><i class="bi bi-activity"></i></span><div><p class="eyebrow">MOVE</p><h2>Workout plan</h2></div></div><div class="plan-text">{{ session.workout_plan }}</div></section>
         </div>
-
-        <!-- Recommendation -->
-        <div class="card-box mb-4">
-
-            <h3>🤖 AI Recommendation</h3>
-
-            <div class="mt-3">
-                <pre>{{ recommendation }}</pre>
-            </div>
-
-        </div>
-
-        <div class="row">
-
-            <!-- Diet -->
-            <div class="col-lg-6">
-
-                <div class="card-box h-100">
-
-                    <h3>🥗 Diet Plan</h3>
-
-                    <hr>
-
-                    <pre>{{ diet_plan }}</pre>
-
-                </div>
-
-            </div>
-
-            <!-- Workout -->
-            <div class="col-lg-6">
-
-                <div class="card-box h-100">
-
-                    <h3>🏋️ Workout Plan</h3>
-
-                    <hr>
-
-                    <pre>{{ workout_plan }}</pre>
-
-                </div>
-
-            </div>
-
-        </div>
-
+        <p class="disclaimer"><i class="bi bi-info-circle"></i> General wellness guidance only. Speak with a qualified professional before starting a new exercise or nutrition program.</p>
     </main>
-
 </div>
-
-</body>
-
-</html>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}

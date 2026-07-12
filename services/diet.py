@@ -1,39 +1,24 @@
 def get_diet_plan(goal, bmi_category):
-
-    if goal == "Weight Loss":
-
-        if bmi_category == "Obese" or bmi_category == "Overweight":
-            return [
-                "🥣 Breakfast: Oats + Milk + Apple",
-                "🍛 Lunch: Brown Rice + Dal + Salad",
-                "🥜 Snack: Mixed Nuts",
-                "🍲 Dinner: Chapati + Vegetables",
-                "💧 Drink at least 3L of water"
-            ]
-
-        else:
-            return [
-                "🥣 Breakfast: Oats + Banana",
-                "🍛 Lunch: Rice + Dal + Vegetables",
-                "🍎 Snack: Fruit",
-                "🍲 Dinner: Soup + Salad"
-            ]
-
-    elif goal == "Muscle Gain":
-
+    """Return a simple, general-purpose food plan when AI is unavailable."""
+    if goal == "Weight Loss" and bmi_category in {"Overweight", "Obese"}:
         return [
-            "🥚 Breakfast: Eggs + Milk + Banana",
-            "🍗 Lunch: Chicken/Paneer + Rice",
-            "🥛 Snack: Protein Shake",
-            "🍚 Dinner: Rice + Dal + Paneer",
-            "💧 Drink 3–4L of water"
+            "Breakfast: Oats with milk and an apple",
+            "Lunch: Brown rice, dal, and a large salad",
+            "Snack: A small handful of mixed nuts",
+            "Dinner: Chapati with vegetables and protein",
+            "Hydration: Aim for at least 3 litres of water",
         ]
-
-    else:
-
+    if goal == "Muscle Gain":
         return [
-            "🍎 Eat a balanced diet",
-            "🥗 Include fruits and vegetables",
-            "🥛 Drink enough water",
-            "🍚 Eat protein with every meal"
+            "Breakfast: Eggs or paneer, milk, and a banana",
+            "Lunch: Chicken or paneer, rice, and vegetables",
+            "Snack: Greek yogurt or a protein shake",
+            "Dinner: Dal, rice, vegetables, and paneer",
+            "Hydration: Aim for 3–4 litres of water",
         ]
+    return [
+        "Build meals around vegetables, fruit, protein, and whole grains",
+        "Include a protein source with every main meal",
+        "Choose water regularly throughout the day",
+        "Keep treats enjoyable and occasional rather than forbidden",
+    ]

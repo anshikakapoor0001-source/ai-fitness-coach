@@ -1,242 +1,297 @@
-import email
-from unicodedata import name
+import logging
+import re
+from functools import wraps
 
-from flask import Flask, render_template, request, redirect, url_for, session, Response
+from flask import Flask, Response, flash, redirect, render_template, request, session, url_for
 
-from services.bmi import calculate_bmi
+from config import Config
+from database.database import get_user_by_email, save_user
 from services.ai_recommendation import generate_plan
-from database.database import save_user
-from services.auth import sign_up, sign_in
-from database.database import get_user_by_email
+from services.auth import sign_in, sign_out, sign_up
+from services.bmi import calculate_bmi
+from services.diet import get_diet_plan
 from services.form_analysis import generate_frames
-app = Flask(__name__)
+from services.workout import get_workout_plan
 
-app.secret_key = "ai_fitness_secret_key"
+
+app = Flask(__name__)
+app.config.from_object(Config)
+app.logger.setLevel(logging.INFO)
+
+
+def login_required(view):
+    @wraps(view)
+    def wrapped_view(*args, **kwargs):
+        if not session.get("user_email"):
+            flash("Please sign in to continue.", "warning")
+            return redirect(url_for("home"))
+        return view(*args, **kwargs)
+
+    return wrapped_view
+
+
+def safe_text(value, field_name, max_length=80):
+    value = (value or "").strip()
+    if not value:
+        raise ValueError(f"{field_name} is required.")
+    if len(value) > max_length:
+        raise ValueError(f"{field_name} must be {max_length} characters or fewer.")
+    return value
+
+
+def valid_email(value):
+    email = safe_text(value, "Email", 254).lower()
+    if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
+        raise ValueError("Enter a valid email address.")
+    return email
+
+
+def profile_from_form():
+    name = safe_text(request.form.get("name"), "Name")
+    goal = request.form.get("goal")
+    valid_goals = {"Weight Loss", "Muscle Gain", "Maintain Fitness"}
+    if goal not in valid_goals:
+        raise ValueError("Please choose a valid fitness goal.")
+
+    try:
+        age = int(request.form.get("age", ""))
+        weight = float(request.form.get("weight", ""))
+        height = float(request.form.get("height", ""))
+    except (TypeError, ValueError) as error:
+        raise ValueError("Enter valid numbers for age, height, and weight.") from error
+
+    if not 13 <= age <= 100:
+        raise ValueError("Age must be between 13 and 100.")
+    if not 30 <= weight <= 350:
+        raise ValueError("Weight must be between 30 and 350 kg.")
+    if not 100 <= height <= 250:
+        raise ValueError("Height must be between 100 and 250 cm.")
+
+    return {"name": name, "age": age, "weight": weight, "height": height, "goal": goal}
+
+
+def split_plan(plan, goal, bmi_category):
+    """Return dependable plan sections even if the model varies its formatting."""
+    sections = re.split(r"^##\s+", plan.strip(), flags=re.MULTILINE)
+    parsed = {}
+    for section in sections:
+        if not section.strip():
+            continue
+        heading, _, content = section.partition("\n")
+        parsed[heading.strip().lower()] = content.strip()
+
+    recommendation = parsed.get("ai recommendation", plan.strip())
+    diet_plan = parsed.get("diet plan", "\n".join(get_diet_plan(goal, bmi_category)))
+    workout_plan = parsed.get("workout plan", "\n".join(get_workout_plan(goal)))
+    return recommendation, diet_plan, workout_plan
+
+
+def store_profile(profile, bmi, bmi_category, recommendation, diet_plan, workout_plan):
+    session.update(
+        {
+            "name": profile["name"],
+            "bmi": bmi,
+            "bmi_category": bmi_category,
+            "goal": profile["goal"],
+            "weight": profile["weight"],
+            "height": profile["height"],
+            "recommendation": recommendation,
+            "diet_plan": diet_plan,
+            "workout_plan": workout_plan,
+        }
+    )
+
 
 @app.route("/")
 def home():
+    if session.get("user_email"):
+        return redirect(url_for("dashboard"))
     return render_template("login.html")
 
-# ----------------------------
-# Login Page
-# ----------------------------
+
 @app.route("/login", methods=["POST"])
 def login():
-
-    email = request.form["email"]
-    password = request.form["password"]
-
-    result = sign_in(email, password)
-
-    if not result.user:
-        return "Invalid email or password!"
-
-    user = get_user_by_email(email)
-
-    if user:
-
-        ai_plan = generate_plan(
-        name=user["name"],
-        age=user["age"],
-        height=user["height"],
-        weight=user["weight"],
-        bmi=user["bmi"],
-        goal=user["goal"]
-    )
-
-    recommendation = ""
-    diet_plan = ""
-    workout_plan = ""
+    try:
+        email = valid_email(request.form.get("email"))
+    except ValueError as error:
+        flash(str(error), "danger")
+        return redirect(url_for("home"))
+    password = request.form.get("password") or ""
+    if not password:
+        flash("Password is required.", "danger")
+        return redirect(url_for("home"))
 
     try:
-        recommendation = ai_plan.split("## Diet Plan")[0]
-        recommendation = recommendation.replace("## AI Recommendation", "").strip()
-
-        diet_plan = ai_plan.split("## Diet Plan")[1].split("## Workout Plan")[0].strip()
-
-        workout_plan = ai_plan.split("## Workout Plan")[1].strip()
-
+        result = sign_in(email, password)
     except Exception:
-        recommendation = ai_plan
-        diet_plan = ""
-        workout_plan = ""
+        app.logger.exception("Sign-in request failed")
+        flash("We could not sign you in right now. Please try again.", "danger")
+        return redirect(url_for("home"))
 
-    # Store data in session (ALWAYS runs)
-    session["recommendation"] = recommendation
-    session["diet_plan"] = diet_plan
-    session["workout_plan"] = workout_plan
+    if not getattr(result, "user", None):
+        flash("Invalid email or password.", "danger")
+        return redirect(url_for("home"))
 
-    session["name"] = user["name"]
-    session["bmi"] = user["bmi"]
-    session["bmi_category"] = user["bmi_category"]
-    session["goal"] = user["goal"]
-    session["weight"] = user["weight"]
-    session["height"] = user["height"]
-
-    print("Session:", dict(session))  # Debug
-
-    return redirect(url_for("dashboard"))  
-
-    return redirect(url_for("profile", email=email))
-# ----------------------------
-# Signup Page
-# ----------------------------
-@app.route("/signup", methods=["GET", "POST"])
-def signup():
-
-    if request.method == "POST":
-
-        email = request.form["email"]
-        password = request.form["password"]
-        confirm_password = request.form["confirm_password"]
-
-        if password != confirm_password:
-            return "Passwords do not match!"
-
-        result = sign_up(email, password)
-
-        if result.user:
-            return redirect(url_for("profile", email=email))
-
-        return "Signup Failed"
-
-    return render_template("signup.html")
-
-# ----------------------------
-# Profile Page
-# ----------------------------
-@app.route("/profile")
-def profile():
-
-    email = request.args.get("email")
-
-    return render_template(
-        "profile.html",
-        email=email
-    )
-    
-    
-@app.route("/dashboard")
-def dashboard():
-
-    return render_template(
-        "dashboard.html",
-        name=session.get("name"),
-        bmi=session.get("bmi"),
-        bmi_category=session.get("bmi_category"),
-        goal=session.get("goal"),
-        weight=session.get("weight"),
-        height=session.get("height"),
-        recommendation=session.get("recommendation"),
-        diet_plan=session.get("diet_plan"),
-        workout_plan=session.get("workout_plan")
-    )
-    
-    
-# ----------------------------
-# Generate AI Plan
-# ----------------------------
-@app.route("/recommend", methods=["POST"])
-def recommend():
-
-    # Get data from profile form
-    email = request.form["email"]
-    name = request.form["name"]
-    age = int(request.form["age"])
-    weight = float(request.form["weight"])
-    height = float(request.form["height"])
-    goal = request.form["goal"]
-
-    # Calculate BMI
-    bmi, bmi_category = calculate_bmi(weight, height)
-
-    # Generate AI fitness plan
-    ai_plan = generate_plan(
-        name=name,
-        age=age,
-        height=height,
-        weight=weight,
-        bmi=round(bmi, 2),
-        goal=goal
-    )
-
-    # Split AI response
-    recommendation = ""
-    diet_plan = ""
-    workout_plan = ""
-
+    session.clear()
+    session["user_email"] = email
     try:
-        recommendation = ai_plan.split("## Diet Plan")[0]
-        recommendation = recommendation.replace("## AI Recommendation", "").strip()
-
-        diet_plan = ai_plan.split("## Diet Plan")[1].split("## Workout Plan")[0].strip()
-
-        workout_plan = ai_plan.split("## Workout Plan")[1].strip()
-
+        user = get_user_by_email(email)
     except Exception:
-        recommendation = ai_plan
-        
-        
-        session["recommendation"] = recommendation
-    session["diet_plan"] = diet_plan
-    session["workout_plan"] = workout_plan
+        app.logger.exception("Could not fetch user profile")
+        flash("Signed in, but we could not load your profile. Please try again.", "warning")
+        return redirect(url_for("profile"))
 
-    session["name"] = name
-    session["bmi"] = round(bmi, 2)
-    session["bmi_category"] = bmi_category
-    session["goal"] = goal
-    session["weight"] = weight
-    session["height"] = height
+    if not user:
+        return redirect(url_for("profile"))
 
-    # Save user profile to Supabase
-    save_user(
-        email=email,
-        name=name,
-        age=age,
-        weight=weight,
-        height=height,
-        bmi=round(bmi, 2),
-        bmi_category=bmi_category,
-        goal=goal
-    )
-    print("FULL AI PLAN:\n", ai_plan)
-    print("Recommendation:", recommendation)
-    print("Diet:", diet_plan)
-    print("Workout:", workout_plan)
-    # Open dashboard
+    profile = {
+        "name": user["name"],
+        "age": user["age"],
+        "weight": user["weight"],
+        "height": user["height"],
+        "goal": user["goal"],
+    }
+    try:
+        plan = generate_plan(**profile, bmi=user["bmi"])
+        recommendation, diet_plan, workout_plan = split_plan(plan, profile["goal"], user["bmi_category"])
+    except Exception:
+        app.logger.exception("Could not refresh AI plan")
+        recommendation = "Your profile is ready. Start with small, sustainable steps each day."
+        diet_plan = "\n".join(get_diet_plan(profile["goal"], user["bmi_category"]))
+        workout_plan = "\n".join(get_workout_plan(profile["goal"]))
+        flash("Your AI plan could not be refreshed, so we prepared a starter plan.", "warning")
+
+    store_profile(profile, user["bmi"], user["bmi_category"], recommendation, diet_plan, workout_plan)
     return redirect(url_for("dashboard"))
 
+
+@app.route("/signup", methods=["GET", "POST"])
+def signup():
+    if request.method == "GET":
+        return render_template("signup.html")
+
+    try:
+        email = valid_email(request.form.get("email"))
+    except ValueError as error:
+        flash(str(error), "danger")
+        return redirect(url_for("signup"))
+    password = request.form.get("password") or ""
+    confirm_password = request.form.get("confirm_password") or ""
+    if password != confirm_password:
+        flash("Passwords do not match.", "danger")
+        return redirect(url_for("signup"))
+    if len(password) < 8:
+        flash("Use a password with at least 8 characters.", "danger")
+        return redirect(url_for("signup"))
+
+    try:
+        result = sign_up(email, password)
+    except Exception:
+        app.logger.exception("Sign-up request failed")
+        flash("We could not create your account. Please try again.", "danger")
+        return redirect(url_for("signup"))
+
+    if not getattr(result, "user", None):
+        flash("We could not create your account. The email may already be registered.", "danger")
+        return redirect(url_for("signup"))
+
+    if getattr(result, "session", None):
+        session.clear()
+        session["user_email"] = email
+        flash("Account created. Complete your profile to receive your plan.", "success")
+        return redirect(url_for("profile"))
+
+    flash("Account created. Check your email to confirm it, then sign in.", "success")
+    return redirect(url_for("home"))
+
+
+@app.route("/profile")
+@login_required
+def profile():
+    return render_template("profile.html", email=session["user_email"])
+
+
+@app.route("/dashboard")
+@login_required
+def dashboard():
+    if not session.get("name"):
+        return redirect(url_for("profile"))
+    return render_template("dashboard.html")
+
+
+@app.route("/recommend", methods=["POST"])
+@login_required
+def recommend():
+    try:
+        profile = profile_from_form()
+        bmi, bmi_category = calculate_bmi(profile["weight"], profile["height"])
+        plan = generate_plan(**profile, bmi=bmi)
+        recommendation, diet_plan, workout_plan = split_plan(plan, profile["goal"], bmi_category)
+    except ValueError as error:
+        flash(str(error), "danger")
+        return redirect(url_for("profile"))
+    except Exception:
+        app.logger.exception("Could not generate AI plan")
+        bmi, bmi_category = calculate_bmi(profile["weight"], profile["height"])
+        recommendation = "Your starter plan is ready. Build consistency first, then increase intensity gradually."
+        diet_plan = "\n".join(get_diet_plan(profile["goal"], bmi_category))
+        workout_plan = "\n".join(get_workout_plan(profile["goal"]))
+        flash("We prepared a starter plan while the AI coach is unavailable.", "warning")
+
+    try:
+        save_user(
+            email=session["user_email"],
+            name=profile["name"],
+            age=profile["age"],
+            weight=profile["weight"],
+            height=profile["height"],
+            bmi=bmi,
+            bmi_category=bmi_category,
+            goal=profile["goal"],
+        )
+    except Exception:
+        app.logger.exception("Could not save user profile")
+        flash("Your plan is ready, but profile changes could not be saved yet.", "warning")
+
+    store_profile(profile, bmi, bmi_category, recommendation, diet_plan, workout_plan)
+    return redirect(url_for("dashboard"))
+
+
 @app.route("/ai-coach")
+@login_required
 def ai_coach():
+    if not session.get("name"):
+        return redirect(url_for("profile"))
+    return render_template("ai_coach.html")
 
-    print("Recommendation:", session.get("recommendation"))
-    print("Diet:", session.get("diet_plan"))
-    print("Workout:", session.get("workout_plan"))
 
-    return render_template(
-        "ai_coach.html",
-        name=session.get("name"),
-        bmi=session.get("bmi"),
-        bmi_category=session.get("bmi_category"),
-        goal=session.get("goal"),
-        weight=session.get("weight"),
-        height=session.get("height"),
-        recommendation=session.get("recommendation"),
-        diet_plan=session.get("diet_plan"),
-        workout_plan=session.get("workout_plan")
-    )
-    
-    
 @app.route("/form-analysis")
+@login_required
 def form_analysis():
     return render_template("form_analysis.html")
 
-@app.route("/video_feed")
+
+@app.route("/video-feed")
+@login_required
 def video_feed():
-    return Response(
-        generate_frames(),
-        mimetype="multipart/x-mixed-replace; boundary=frame"
-    )
+    return Response(generate_frames(), mimetype="multipart/x-mixed-replace; boundary=frame")
+
+
+@app.route("/logout", methods=["POST"])
+def logout():
+    try:
+        sign_out()
+    except Exception:
+        app.logger.info("Remote sign-out could not be completed", exc_info=True)
+    session.clear()
+    flash("You have been signed out.", "success")
+    return redirect(url_for("home"))
+
+
+@app.route("/health")
+def health():
+    return {"status": "ok"}
+
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False)

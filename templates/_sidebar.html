@@ -1,0 +1,15 @@
+<aside class="sidebar">
+    <a class="brand" href="{{ url_for('dashboard') }}">
+        <span class="brand-mark"><i class="bi bi-heart-pulse-fill"></i></span>
+        <span>Fitness AI<small>Your daily coach</small></span>
+    </a>
+    <nav class="menu" aria-label="Main navigation">
+        <a class="{% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}"><i class="bi bi-grid-1x2-fill"></i>Dashboard</a>
+        <a class="{% if request.endpoint == 'ai_coach' %}active{% endif %}" href="{{ url_for('ai_coach') }}"><i class="bi bi-stars"></i>AI Coach</a>
+        <a class="{% if request.endpoint == 'form_analysis' %}active{% endif %}" href="{{ url_for('form_analysis') }}"><i class="bi bi-camera-video-fill"></i>Form Analysis</a>
+        <a href="{{ url_for('profile') }}"><i class="bi bi-person-vcard"></i>Update Profile</a>
+    </nav>
+    <form action="{{ url_for('logout') }}" method="post" class="logout-form">
+        <button type="submit"><i class="bi bi-box-arrow-left"></i>Sign out</button>
+    </form>
+</aside>

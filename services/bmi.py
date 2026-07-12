@@ -4,6 +4,9 @@ def calculate_bmi(weight, height):
     and its category.
     """
 
+    if weight <= 0 or height <= 0:
+        raise ValueError("Height and weight must be greater than zero.")
+
     height_m = height / 100
     bmi = weight / (height_m ** 2)
 
