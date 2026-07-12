@@ -10,7 +10,7 @@ from services.ai_recommendation import generate_plan
 from services.auth import sign_in, sign_out, sign_up
 from services.bmi import calculate_bmi
 from services.diet import get_diet_plan
-from services.form_analysis import generate_frames
+from services.form_analysis import exercise_choices, generate_frames
 from services.workout import get_workout_plan
 
 
@@ -268,13 +268,16 @@ def ai_coach():
 @app.route("/form-analysis")
 @login_required
 def form_analysis():
-    return render_template("form_analysis.html")
+    return render_template("form_analysis.html", exercises=exercise_choices())
 
 
 @app.route("/video-feed")
 @login_required
 def video_feed():
-    return Response(generate_frames(), mimetype="multipart/x-mixed-replace; boundary=frame")
+    return Response(
+        generate_frames(request.args.get("exercise", "squat")),
+        mimetype="multipart/x-mixed-replace; boundary=frame",
+    )
 
 
 @app.route("/logout", methods=["POST"])

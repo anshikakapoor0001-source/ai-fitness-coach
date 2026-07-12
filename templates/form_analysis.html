@@ -5,10 +5,10 @@
     {% include "_sidebar.html" %}
     <main class="main-content">
         {% include "_alerts.html" %}
-        <header class="page-header"><div><p class="eyebrow">LIVE FEEDBACK</p><h1>Form analysis</h1><p class="muted">Use your camera to check your squat depth and count reps.</p></div></header>
-        <section class="hero form-hero"><div><span class="hero-badge"><i class="bi bi-camera-video"></i> Squats available</span><h2>Move with confidence.</h2><p>Stand far enough back for your full body to appear in frame. The counter starts after it detects you standing upright.</p></div><i class="bi bi-person-arms-up hero-icon"></i></section>
-        <section class="content-card analysis-card"><div class="analysis-copy"><span class="exercise-icon"><i class="bi bi-activity"></i></span><div><h2>Squat coach</h2><p class="muted">The camera stays on this device and is used only for this live session.</p></div></div><div class="analysis-actions"><button id="startBtn" class="btn btn-primary"><i class="bi bi-play-fill"></i> Start analysis</button><button id="stopBtn" class="btn btn-outline-danger d-none"><i class="bi bi-stop-fill"></i> Stop session</button></div><div id="cameraContainer" class="camera-container d-none"><img id="videoFeed" alt="Live squat form analysis camera feed"><p id="cameraStatus" class="camera-status"><i class="bi bi-camera-video"></i> Connecting to camera…</p></div></section>
-        <section class="tips-grid"><article><i class="bi bi-rulers"></i><h3>Frame yourself</h3><p>Keep your hips, knees, and ankles visible.</p></article><article><i class="bi bi-arrow-down-up"></i><h3>Controlled movement</h3><p>Lower with control, then return to standing.</p></article><article><i class="bi bi-shield-check"></i><h3>Listen to your body</h3><p>Stop if you feel pain or dizziness.</p></article></section>
+        <header class="page-header"><div><p class="eyebrow">LIVE FEEDBACK</p><h1>Form analysis</h1><p class="muted">Use your camera to check movement depth and count controlled reps.</p></div></header>
+        <section class="hero form-hero"><div><span class="hero-badge"><i class="bi bi-camera-video"></i> Four exercises available</span><h2>Move with confidence.</h2><p>Select an exercise, then stand far enough back for the landmarks used by the coach to appear in frame.</p></div><i class="bi bi-person-arms-up hero-icon"></i></section>
+        <section class="content-card analysis-card"><div class="analysis-copy"><span class="exercise-icon"><i class="bi bi-activity"></i></span><div><h2 id="coachTitle">Squat coach</h2><p class="muted">The camera stays on this device and is used only for this live session.</p></div></div><div class="analysis-actions"><label class="visually-hidden" for="exerciseSelect">Exercise</label><select id="exerciseSelect" class="form-select" aria-label="Choose an exercise">{% for exercise in exercises %}<option value="{{ exercise.id }}">{{ exercise.name }}</option>{% endfor %}</select><button id="startBtn" class="btn btn-primary"><i class="bi bi-play-fill"></i> Start analysis</button><button id="stopBtn" class="btn btn-outline-danger d-none"><i class="bi bi-stop-fill"></i> Stop session</button></div><div id="cameraContainer" class="camera-container d-none"><img id="videoFeed" alt="Live exercise form analysis camera feed"><p id="cameraStatus" class="camera-status"><i class="bi bi-camera-video"></i> Connecting to camera...</p></div></section>
+        <section class="tips-grid"><article><i class="bi bi-rulers"></i><h3>Frame yourself</h3><p>Keep the joints used by your exercise visible.</p></article><article><i class="bi bi-arrow-down-up"></i><h3>Controlled movement</h3><p>Complete each movement and return to the starting position.</p></article><article><i class="bi bi-shield-check"></i><h3>Listen to your body</h3><p>Stop if you feel pain or dizziness.</p></article></section>
     </main>
 </div>
 <script>
@@ -17,13 +17,20 @@ const stopBtn = document.getElementById('stopBtn');
 const camera = document.getElementById('cameraContainer');
 const video = document.getElementById('videoFeed');
 const status = document.getElementById('cameraStatus');
+const exerciseSelect = document.getElementById('exerciseSelect');
+const coachTitle = document.getElementById('coachTitle');
 
+exerciseSelect.addEventListener('change', () => {
+  coachTitle.textContent = `${exerciseSelect.options[exerciseSelect.selectedIndex].text} coach`;
+});
 startBtn.addEventListener('click', () => {
   camera.classList.remove('d-none');
   startBtn.classList.add('d-none');
   stopBtn.classList.remove('d-none');
-  status.innerHTML = '<i class="bi bi-camera-video"></i> Connecting to camera…';
-  video.src = '{{ url_for("video_feed") }}';
+  exerciseSelect.disabled = true;
+  status.classList.remove('d-none');
+  status.innerHTML = '<i class="bi bi-camera-video"></i> Connecting to camera...';
+  video.src = `{{ url_for("video_feed") }}?exercise=${encodeURIComponent(exerciseSelect.value)}`;
   video.onload = () => { status.classList.add('d-none'); };
   video.onerror = () => { status.innerHTML = '<i class="bi bi-exclamation-triangle"></i> We could not access the camera. Check that it is connected and not in use by another app.'; };
 });
@@ -32,6 +39,7 @@ stopBtn.addEventListener('click', () => {
   camera.classList.add('d-none');
   startBtn.classList.remove('d-none');
   stopBtn.classList.add('d-none');
+  exerciseSelect.disabled = false;
 });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
